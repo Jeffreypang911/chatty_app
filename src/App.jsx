@@ -3,6 +3,21 @@ import ChatBar from './ChatBar.jsx';
 import Messagelist from './Messagelist.jsx';
 
 
+const generateRandomId = (alphabet => {
+  const alphabetLength = alphabet.length;
+  const randoIter = (key, n) => {
+    if (n === 0) {
+      return key;
+    }
+    const randoIndex = Math.floor(Math.random() * alphabetLength);
+    const randoLetter = alphabet[randoIndex];
+    return randoIter(key + randoLetter, n - 1);
+  };
+  return () => randoIter("", 10);
+})("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+
+
+
 class App extends Component {
 
   constructor(props) {
@@ -23,22 +38,31 @@ class App extends Component {
         ]
       }
     }
+    this.inputMessage = this.inputMessage.bind(this);
+    this.changeUser = this.changeUser.bind(this);
   }
 
+  // addMessage(content){
+  //   const newMessage = {id: generateRandomId, username: this.state.data.currentUser, content: "Hello there!"};
+  //   const messages = this.state.data.messages.concat(newMessage)
+  // }
 
   componentDidMount() {
-    console.log("componentDidMount <App />");
-    setTimeout(() => {
-      console.log("Simulating incoming message");
-      // Add a new message to the list of messages in the data store
-      const newMessage = {id: 3, username: "Michelle", content: "Hello there!"};
-      const messages = this.state.data.messages.concat(newMessage)
-      // Update the state of the app component.
-      // Calling setState will trigger a call to render() in App and all child components.
-      this.setState({data: {messages: messages}})
-    }, 1000);
+    //makes sure everything is rendered first before 
   }
 
+  inputMessage(e) {
+    if (e.key === "Enter") {
+      console.log(e)
+      const newMessage = {id: generateRandomId(), username: this.state.data.currentUser.name, content: e.target.value};
+      const messages = this.state.data.messages.concat(newMessage)
+      this.setState({data: { currentUser: this.state.data.currentUser, messages: messages}})
+    }
+  }
+
+  changeUser(e) {
+    
+  }
 
   render() {
     return (
@@ -47,7 +71,7 @@ class App extends Component {
           <a href="/" className="navbar-brand">Chatty</a>
         </nav>
         <Messagelist messages={this.state.data.messages}/>
-        <ChatBar currentUser={this.state.data.name}/>
+        <ChatBar currentUser={this.state.data.currentUser} onKeyPress={this.inputMessage}/>
       </div>
     );
   }
