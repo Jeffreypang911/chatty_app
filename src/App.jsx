@@ -38,6 +38,8 @@ class App extends Component {
         ]
       }
     }
+    this.Socket = new WebSocket("ws://localhost:3001");
+    console.log(this.Socket.protocol);
     this.inputMessage = this.inputMessage.bind(this);
     this.changeUser = this.changeUser.bind(this);
   }
@@ -48,15 +50,24 @@ class App extends Component {
   // }
 
   componentDidMount() {
-    //makes sure everything is rendered first before 
+    this.Socket.onopen = (event) => {
+      console.log("OPEN SOCKET")
+    this.Socket.send("New Socket is connected!"); 
+    };
   }
 
   inputMessage(e) {
     if (e.key === "Enter") {
-      console.log(e)
+
       const newMessage = {id: generateRandomId(), username: this.state.data.currentUser.name, content: e.target.value};
       const messages = this.state.data.messages.concat(newMessage)
       this.setState({data: { currentUser: this.state.data.currentUser, messages: messages}})
+      const socketObject = {type: "sendMessage",
+                      content: e.target.value,
+                      username: this.state.data.currentUser.name
+    }
+      this.Socket.send(JSON.stringify(socketObject)); 
+      console.log(`SENT "${e.target.value}" TO SERVER!`)
     }
   }
 
