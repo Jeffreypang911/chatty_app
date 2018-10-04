@@ -1,8 +1,11 @@
 import React, {Component} from 'react';
 import ChatBar from './ChatBar.jsx';
 import Messagelist from './Messagelist.jsx';
+const uuidv4 = require('uuid/v4');
 
 
+
+//Joels Gangster Tail Recursion function
 const generateRandomId = (alphabet => {
   const alphabetLength = alphabet.length;
   const randoIter = (key, n) => {
@@ -18,61 +21,64 @@ const generateRandomId = (alphabet => {
 
 
 
-class App extends Component {
 
+class App extends Component {
   constructor(props) {
     super(props)
     this.state = { data: {
-        currentUser: {name: "Bob"}, // optional. if currentUser is not defined, it means the user is Anonymous
-        messages: [
-          {
-            username: "Bob",
-            content: "Has anyone seen my marbles?",
-            id: "123"
-          },
-          {
-            username: "Anonymous",
-            content: "No, I think you lost them. You lost your marbles Bob. You lost them for good.",
-            id: "234"
-          }
-        ]
+        currentUser: {name: "Bob"},
+        messages: []
       }
     }
     this.Socket = new WebSocket("ws://localhost:3001");
     console.log(this.Socket.protocol);
     this.inputMessage = this.inputMessage.bind(this);
     this.changeUser = this.changeUser.bind(this);
-  }
+    this.handleMessage = this.handleMessage.bind(this);
+    this.changeUser = this.changeUser.bind(this);
+    } 
+  
 
-  // addMessage(content){
-  //   const newMessage = {id: generateRandomId, username: this.state.data.currentUser, content: "Hello there!"};
-  //   const messages = this.state.data.messages.concat(newMessage)
-  // }
+  handleMessage = function (event) {
+    let messageObj = JSON.parse(event.data);
+    console.log("RECEIVING MESSAGE FROM CLIENT: ", messageObj.content, "USERNAME: ", messageObj.username );
+    let incomingMessage = {id: messageObj.id, username: messageObj.username, content: messageObj.content};
+    let messageConcat = this.state.data.messages.concat(incomingMessage);
+    this.setState({data: { currentUser: this.state.data.currentUser, messages: messageConcat}})
+  }
 
   componentDidMount() {
     this.Socket.onopen = (event) => {
-      console.log("OPEN SOCKET")
-    this.Socket.send("New Socket is connected!"); 
+      console.log("OPEN SOCKET");
     };
+    this.Socket.onmessage = this.handleMessage
   }
+
+
 
   inputMessage(e) {
     if (e.key === "Enter") {
-
-      const newMessage = {id: generateRandomId(), username: this.state.data.currentUser.name, content: e.target.value};
-      const messages = this.state.data.messages.concat(newMessage)
-      this.setState({data: { currentUser: this.state.data.currentUser, messages: messages}})
-      const socketObject = {type: "sendMessage",
-                      content: e.target.value,
-                      username: this.state.data.currentUser.name
-    }
+      const socketObject = {
+        id: uuidv4(),
+        type: "sendMessage",
+        content: e.target.value,
+        username: this.state.data.currentUser.name
+      }
       this.Socket.send(JSON.stringify(socketObject)); 
       console.log(`SENT "${e.target.value}" TO SERVER!`)
+      e.target.value = ""
     }
   }
 
-  changeUser(e) {
-    
+
+  changeUser(e){
+    let newUser = e.target.value
+    if (e.key === "Enter") {
+        this.setState((prevState) => {
+          console.log(prevState)
+          Object.assign(prevState.data.currentUser, {name: newUser}
+      )});
+    }
   }
 
   render() {
@@ -82,7 +88,7 @@ class App extends Component {
           <a href="/" className="navbar-brand">Chatty</a>
         </nav>
         <Messagelist messages={this.state.data.messages}/>
-        <ChatBar currentUser={this.state.data.currentUser} onKeyPress={this.inputMessage}/>
+        <ChatBar currentUser={this.state.data.currentUser} onKeyPress={this.inputMessage} onUsernameUpdate={this.changeUser}/>
       </div>
     );
   }
